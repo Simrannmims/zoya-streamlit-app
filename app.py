@@ -9,17 +9,11 @@ def get_local_image_path(image_code):
     full_path = os.path.join(image_folder, filename)
     return full_path
 
-# ----------------------------
-# LOAD DATA
-# ----------------------------
 df = pd.read_excel("cleaned_data.xlsx")
 image_df = pd.read_excel("image_links.xlsx")
 
 df_limited = df.copy()
 
-# ----------------------------
-# STREAMLIT STYLING
-# ----------------------------
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&display=swap');
@@ -72,20 +66,42 @@ if not st.session_state.profile_loaded:
         st.session_state.customer_id = customer_id
         st.rerun()
 
-# ----------------------------
-# DISPLAY PROFILE
-# ----------------------------
 else:
-    customer_id = st.session_state.customer_id
-    customer_data = df_limited[df_limited['Customer ID'] == int(customer_id)].iloc[0]
+    # Toolbar-like Go Back button and title at top
+    with st.container():
+        col1, col2, col3 = st.columns([1, 8, 1])
 
-    st.markdown(f"<h2 style='text-align:center;'><strong>Customer Profile</strong></h2>", unsafe_allow_html=True)
+        with col1:
+            st.markdown(
+                """
+                <style>
+                div.stButton > button:first-child {
+                    white-space: nowrap;
+                    padding: 0.25rem 0.6rem;
+                    font-size: 14px;
+                }
+                </style>
+                """,
+                unsafe_allow_html=True
+            )
+            if st.button("← Go Back"):
+                st.session_state.profile_loaded = False
+                st.rerun()
+
+        customer_id = st.session_state.customer_id
+        customer_data = df_limited[df_limited['Customer ID'] == int(customer_id)].iloc[0]
+
+        with col2:
+            st.markdown(f"<h1 style='text-align:center; margin: 0;'><strong>{customer_data['Customer Name']}</strong></h1>", unsafe_allow_html=True)
+
+        with col3:
+            st.write("")
+
     st.markdown(f"<h4 style='text-align:center;'><strong>Customer ID: {customer_id}</strong></h4>", unsafe_allow_html=True)
 
     # Demographics
     st.markdown("### 👤 Demographics")
-    st.markdown(f"""
-    **Customer Name:** {customer_data['Customer Name']}  
+    st.markdown(f""" 
     **Age:** {int(customer_data['Age'])}  
     **Gender:** {customer_data['Gender']}  
     **Tier:** {customer_data['Tier']}  
@@ -112,7 +128,6 @@ else:
 
     # Persona
     st.markdown("### 🧠 Persona")
-    # Note: removed trailing space in key
     if 'Customer description' in customer_data.index and pd.notna(customer_data['Customer description']):
         st.markdown(customer_data['Customer description'])
     else:
@@ -129,7 +144,6 @@ else:
         customer_data.get('itemcode_3'),
     ]
 
-    # Filter and clean codes
     valid_image_codes = [code.strip() for code in image_codes if pd.notna(code)]
 
     if valid_image_codes:
